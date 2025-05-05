@@ -1,0 +1,47 @@
+#include <iostream>
+#include <vector>
+#include <omp.h>
+using namespace std;
+
+// Function to compute mean
+double mean(const vector<double> &v) {
+    double sum = 0.0;
+    int n = v.size();
+
+    #pragma omp parallel for reduction(+:sum)
+    for (int i = 0; i < n; i++) {
+        sum += v[i];
+    }
+    return sum / n;
+}
+
+// Function to compute slope (m) and intercept (b)
+void linear_regression(const vector<double> &x, const vector<double> &y, double &m, double &b) {
+    int n = x.size();
+    double x_mean = mean(x);
+    double y_mean = mean(y);
+
+    double num = 0.0, den = 0.0;
+
+    #pragma omp parallel for reduction(+:num, den)
+    for (int i = 0; i < n; i++) {
+        num += (x[i] - x_mean) * (y[i] - y_mean);
+        den += (x[i] - x_mean) * (x[i] - x_mean);
+    }
+
+    m = num / den;
+    b = y_mean - m * x_mean;
+}
+
+int main() {
+    // Example dataset
+    vector<double> x = {1, 2, 3, 4, 5};
+    vector<double> y = {2, 4, 5, 4, 5};
+
+    double m, b;
+    linear_regression(x, y, m, b);
+
+    cout << "Linear Regression Line: y = " << m << "x + " << b << endl;
+
+    return 0;
+}
